@@ -22,7 +22,7 @@
 project: InventorySystem — full-stack inventory management web app for small businesses, with an AI service for restocking insights
 url: https://inventory-system-five-steel.vercel.app
 author: Agustín Alanís (github.com/agustinalanis)
-role: Sole developer — design, frontend, backend, database, testing, CI/CD, deployment
+role: Sole developer — frontend, backend, database, testing, CI/CD, deployment (visual UI design generated with AI)
 timeline: December 2025 – January 2026, with improvements through July 2026 (77 commits)
 code_visibility: Private; this repo is a technical case study
 
@@ -61,7 +61,7 @@ skills_demonstrated: full-stack TypeScript, LLM integration, clean/hexagonal arc
 
 ## 📌 Overview
 
-InventorySystem is a full-stack web app for small businesses to manage their stock. I built it **end-to-end, as the sole developer**: design, frontend, backend, database, tests, CI/CD and deployment.
+InventorySystem is a full-stack web app for small businesses to manage their stock. I built it **end-to-end, as the sole developer**: frontend, backend, database, tests, CI/CD and deployment. The visual UI design was generated with AI; I implemented and integrated it into the app.
 
 - **Products, suppliers and users**, with three roles: `ADMIN`, `MANAGER` and `VIEWER`
 - **Dashboard** with stock status, categories and low-stock products
