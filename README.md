@@ -1,4 +1,4 @@
-<h1 align="center">📦 InventorySystem — Full-stack inventory management with RBAC</h1>
+<h1 align="center">📦 InventorySystem — Inventory management with RBAC and AI restocking insights</h1>
 
 <p align="center">
   <a href="https://inventory-system-five-steel.vercel.app"><img src="https://img.shields.io/badge/Live_demo-2EA043?style=for-the-badge&logo=vercel&logoColor=white" alt="Live demo"/></a>
@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <code>React 19</code> <code>TypeScript</code> <code>TanStack Query</code> <code>Express</code> <code>Prisma</code> <code>PostgreSQL</code> <code>Zod</code> <code>Jest</code> <code>Vitest</code> <code>Docker</code> <code>GitHub Actions</code>
+  <code>React 19</code> <code>TypeScript</code> <code>TanStack Query</code> <code>Express</code> <code>Prisma</code> <code>PostgreSQL</code> <code>Zod</code> <code>OpenAI API</code> <code>Jest</code> <code>Vitest</code> <code>Docker</code> <code>GitHub Actions</code>
 </p>
 
 > **Technical case study.** The source code is private. This document covers architecture, key decisions and selected code excerpts. Happy to do a live code walkthrough in an interview.
@@ -19,7 +19,7 @@
 <br/>
 
 ```yaml
-project: InventorySystem — full-stack inventory management web app for small businesses
+project: InventorySystem — full-stack inventory management web app for small businesses, with an AI service for restocking insights
 url: https://inventory-system-five-steel.vercel.app
 author: Agustín Alanís (github.com/agustinalanis)
 role: Sole developer — design, frontend, backend, database, testing, CI/CD, deployment
@@ -32,6 +32,7 @@ stack:
   data: PostgreSQL, Prisma ORM
   auth: JWT access + rotating refresh tokens, bcrypt
   email: Resend
+  ai: separate service using the OpenAI API (structured JSON output)
   testing: Jest + Supertest (97 backend tests), Vitest + React Testing Library (49 frontend tests)
   infrastructure: Docker multi-stage builds, Docker Compose, GitHub Actions CI, Vercel, Render
 
@@ -40,6 +41,7 @@ features:
   - Dashboard with aggregated stock metrics
   - Per-product minimum stock with email alerts to admins and managers
   - Instant demo mode that switches to live data once the backend is awake
+  - Separate AI service that identifies top-rotating products and suggests restocking, on demand
 
 key_engineering:
   - Hexagonal architecture: domain contracts, application services, infrastructure adapters
@@ -47,9 +49,10 @@ key_engineering:
   - Short-lived access tokens with refresh token rotation and logout invalidation
   - Dashboard metrics computed with parallel, database-side aggregations
   - Email alerts isolated so failures never block a stock update
+  - AI service decoupled from the core app: consumes the inventory API and keeps its own movement history
   - CI pipeline with PostgreSQL service, migrations, unit + integration tests and Docker builds
 
-skills_demonstrated: full-stack TypeScript, clean/hexagonal architecture, authentication and authorization, automated testing, CI/CD, Docker, production deployment
+skills_demonstrated: full-stack TypeScript, LLM integration, clean/hexagonal architecture, authentication and authorization, automated testing, CI/CD, Docker, production deployment
 ```
 
 </details>
@@ -64,6 +67,7 @@ InventorySystem is a full-stack web app for small businesses to manage their sto
 - **Dashboard** with stock status, categories and low-stock products
 - **Low-stock email alerts** based on a minimum stock set per product
 - **Demo mode** that responds instantly, even while the backend is waking up
+- **AI restocking insights** from a separate service: top-rotating products and restocking suggestions
 
 **Timeline:** December 2025 – January 2026, with improvements through July 2026 · 77 commits
 
@@ -89,6 +93,9 @@ flowchart LR
   end
   REPO --> DB[(PostgreSQL)]
   MAIL --> PROVIDER[Email provider]
+  AI["AI service<br/>(separate)"] -. Inventory API .-> MW
+  AI --> HIST[(Movement history)]
+  AI --> LLM[OpenAI API]
 ```
 
 ### Updating stock
@@ -122,6 +129,31 @@ stateDiagram-v2
   live --> offline: Session ends
 ```
 
+### AI restocking insights
+
+A **separate service** turns stock movement history into restocking recommendations:
+
+```mermaid
+sequenceDiagram
+  participant U as Manager
+  participant AI as AI service
+  participant INV as Inventory API
+  participant H as Movement history
+  participant LLM as OpenAI API
+  U->>AI: Request insights
+  AI->>INV: Fetch products and stock levels
+  AI->>H: Read stock movements
+  AI->>LLM: Inventory and movement data
+  LLM-->>AI: Structured JSON
+  AI-->>U: Top-rotating products + restocking suggestions
+```
+
+- **Decoupled from the core app:** it consumes the inventory API like any other client and keeps its own movement history, so the main system doesn't depend on it.
+- **On demand:** it runs when a user requests insights, not on every stock change.
+- **Structured output:** the model returns JSON, so results can be displayed and processed by the app instead of parsed from free text.
+
+> The AI service isn't part of the public demo, and its code isn't included in this case study.
+
 ### Data model
 
 ```mermaid
@@ -148,6 +180,8 @@ erDiagram
 | **15-minute access tokens + refresh token rotation** | A single long-lived token | Shrinks the window in which a leaked token can be used |
 | **Parallel, database-side aggregations** for the dashboard | Aggregating in memory from a full listing | Counts, groupings and stock-vs-minimum comparisons run in SQL |
 | **Demo mode with an in-memory store** synced to the backend | Relying on an always-on server | The demo never breaks while the server is waking up |
+| **AI as a separate service** consuming the inventory API | AI logic inside the core backend | The inventory system keeps working on its own, and the AI service can evolve or scale independently |
+| **Structured JSON from the LLM** | Free-text responses | Results can be rendered and processed reliably |
 | **Separate deployments** (Vercel + Render) | A single host | Each layer uses the platform that fits it best |
 
 ---
